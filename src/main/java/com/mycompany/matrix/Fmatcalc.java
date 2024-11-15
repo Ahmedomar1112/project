@@ -61,6 +61,7 @@ public class Fmatcalc extends javax.swing.JFrame {
         initComponents();
         applyHighlightShadow(lgninfo);
         applyHighlightShadow(infobtn);
+        addHoverEffectToButton();
         
     }
     
@@ -147,7 +148,7 @@ private void applyHighlightShadow(JButton button) {
                 infobtnActionPerformed(evt);
             }
         });
-        jPanel1.add(infobtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 170, 150, 50));
+        jPanel1.add(infobtn, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 200, 150, 50));
 
         lgninfo = new JButton();
         lgninfo.setBackground(new java.awt.Color(102, 102, 102));
@@ -159,11 +160,10 @@ private void applyHighlightShadow(JButton button) {
                 lgninfoActionPerformed(evt);
             }
         });
-        jPanel1.add(lgninfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 170, 150, 50));
+        jPanel1.add(lgninfo, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 200, 150, 50));
 
         jLabel1.setIcon(new javax.swing.ImageIcon("C:\\Users\\EL-Hussein Store\\OneDrive\\Documents\\NetBeansProjects\\matrix\\src\\main\\java\\56371c2987f7a8739b7280567e205c94.jpg"));
-        jLabel1.setText("jLabel1");
-        jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 550, 400));
+        jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 550, 470));
 
         parent.add(jPanel1, "card4");
 
@@ -264,16 +264,16 @@ private void applyHighlightShadow(JButton button) {
             .addGroup(mainpanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(mainpanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 62, Short.MAX_VALUE)
+                    .addComponent(jButton1, javax.swing.GroupLayout.DEFAULT_SIZE, 84, Short.MAX_VALUE)
                     .addComponent(jButton2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
+                .addComponent(jButton3, javax.swing.GroupLayout.DEFAULT_SIZE, 88, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, 75, Short.MAX_VALUE)
+                .addComponent(jButton4, javax.swing.GroupLayout.DEFAULT_SIZE, 87, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(createmat, javax.swing.GroupLayout.DEFAULT_SIZE, 75, Short.MAX_VALUE)
+                .addComponent(createmat, javax.swing.GroupLayout.DEFAULT_SIZE, 87, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(createmat1, javax.swing.GroupLayout.DEFAULT_SIZE, 76, Short.MAX_VALUE)
+                .addComponent(createmat1, javax.swing.GroupLayout.DEFAULT_SIZE, 88, Short.MAX_VALUE)
                 .addContainerGap())
         );
 
@@ -491,18 +491,26 @@ private void openMatrixPanel(int rows, int cols) {
                     JTextField field = matrixFields[i][j];
                     String text = field.getText().trim();
 
-                    // التحقق إذا كانت الخلية فارغة أو تحتوي على أكثر من حرف
-                    if (text.isEmpty() || text.length() != 1) {
+                    // التحقق إذا كانت الخلية فارغة أو تحتوي على تنسيق غير صحيح
+                    if (text.isEmpty() || !text.matches("([0-9]+[a-zA-Z]*)|([a-zA-Z]+[0-9]*)")) {
                         field.setBackground(Color.RED);  // تغيير لون الخلية إلى الأحمر إذا كانت غير صحيحة
                         hasError = true;
                     } else {
-                        field.setBackground(Color.WHITE);  // إعادة لون الخلية إلى الأبيض إذا كانت صحيحة
+                        // إذا كان النص يحتوي على أرقام وحروف معًا، تحقق من الترتيب الصحيح
+                        if (text.matches("[0-9]+[a-zA-Z]+") || text.matches("[0-9]+")) {
+                            field.setBackground(Color.WHITE);  // إعادة لون الخلية إلى الأبيض إذا كانت صحيحة
+                        } else if (text.matches("[a-zA-Z]+[0-9]+")) {
+                            field.setBackground(Color.RED);  // تغيير اللون إذا كان الحرف أولا
+                            hasError = true;
+                        } else {
+                            field.setBackground(Color.WHITE);
+                        }
                     }
                 }
             }
 
             if (hasError) {
-                JOptionPane.showMessageDialog(matrixFrame, "يرجى التأكد من عدم ترك أي خلية فارغة، وإدخال حرف واحد فقط في كل خلية.", "خطأ", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(matrixFrame, "يرجى التأكد من إدخال الأرقام أولاً ثم الحروف، ولا يمكن إدخال الحروف أولاً.", "خطأ", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -511,7 +519,15 @@ private void openMatrixPanel(int rows, int cols) {
                 for (int i = 0; i < rows; i++) {
                     for (int j = 0; j < cols; j++) {
                         String text = matrixFields[i][j].getText().trim();
-                        matrix[i][j] = text.charAt(0);  // حفظ الحرف في المصفوفة
+
+                        // التعامل مع النصوص في الخلايا (أرقام وحروف معًا)
+                        if (text.matches("[0-9]+")) {
+                            matrix[i][j] = Integer.parseInt(text);  // حفظ الرقم في المصفوفة
+                        } else if (text.matches("[a-zA-Z]+")) {
+                            matrix[i][j] = text.charAt(0);  // حفظ الحرف في المصفوفة
+                        } else {
+                            matrix[i][j] = text;  // حفظ النص في المصفوفة
+                        }
                     }
                 }
                 JOptionPane.showMessageDialog(matrixFrame, "تم حفظ المصفوفة بنجاح!");
@@ -527,6 +543,8 @@ private void openMatrixPanel(int rows, int cols) {
     matrixFrame.setLocationRelativeTo(null);  // وضع النافذة في منتصف الشاشة
     matrixFrame.setVisible(true);
 }
+
+
 
 private void displayMatrix() {
     if (matrix == null) {
@@ -1392,18 +1410,34 @@ private void openMatrixPanelForDivision(int rows, int cols, Object divisor) {
     saveButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            try {
-                for (int i = 0; i < rows; i++) {
-                    for (int j = 0; j < cols; j++) {
-                        matrix[i][j] = matrixFields[i][j].getText();  // حفظ النصوص كما هي
-                    }
-                }
-                Object[][] resultMatrix = divideMatrixByScalar(matrix, (double) divisor);
-                displayResultMatrix3(resultMatrix);
-                matrixFrame.dispose();
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(matrixFrame, "يرجى إدخال أرقام صحيحة فقط", "خطأ", JOptionPane.ERROR_MESSAGE);
+          try {
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            String cellValue = matrixFields[i][j].getText();
+            
+            // Check if the cell contains a single English letter or a single digit
+            if (cellValue.matches("[A-Za-z]{1}|[0-9]{1}")) {
+                matrix[i][j] = cellValue;  // Save the value as is
+            } else {
+                // Show error message if the value is invalid
+                JOptionPane.showMessageDialog(matrixFrame, 
+                    "يرجى إدخال حرف إنجليزي واحد أو رقم فقط في كل خانة", 
+                    "خطأ", 
+                    JOptionPane.ERROR_MESSAGE);
+                return;  // Exit if invalid input is found
             }
+        }
+    }
+
+    // Proceed with the division if all inputs are valid
+    Object[][] resultMatrix = divideMatrixByScalar(matrix, (double) divisor);
+    displayResultMatrix3(resultMatrix);
+    matrixFrame.dispose();
+
+} catch (NumberFormatException ex) {
+    JOptionPane.showMessageDialog(matrixFrame, "يرجى إدخال أرقام صحيحة فقط", "خطأ", JOptionPane.ERROR_MESSAGE);
+}
+
         }
     });
 
@@ -1961,38 +1995,51 @@ private Object[][] invertMatrix(Double[][] matrix) throws Exception {
     
     
     private boolean isValidInput(String text) {
-    // التحقق من أن المدخل يتكون من حرف واحد أو رقم أو مزيج بين حرف واحد ورقم
-    return text.matches("[-+]?\\d*(\\.\\d+)?[a-zA-Z]*") && text.length() <= 20;
+    // التحقق من أن المدخل يتكون من أرقام، متغيرات، وعلامات جمع أو طرح فقط
+    return text.matches("(-?\\d*(\\.\\d+)?[a-zA-Z]?\\s*\\+\\s*)*(-?\\d*(\\.\\d+)?[a-zA-Z]?)") && text.length() <= 50;
 }
     
     private void sumMatricesWithVariables(JTextField[][][] matrixFields, int rows, int cols, int numMatrices) {
-        String[][] resultMatrix = new String[rows][cols];
+    String[][] resultMatrix = new String[rows][cols];
 
-        for (int j = 0; j < rows; j++) {
-            for (int k = 0; k < cols; k++) {
-                Map<String, Double> totalTerms = new HashMap<>();
+    for (int j = 0; j < rows; j++) {
+        for (int k = 0; k < cols; k++) {
+            Map<String, Double> totalTerms = new HashMap<>();
 
-                // جمع القيم من كل مصفوفة
-                for (int i = 0; i < numMatrices; i++) {
-                    String expression = matrixFields[i][j][k].getText();
-                    if (expression.isEmpty()) expression = "0";
+            // جمع القيم من كل مصفوفة
+            for (int i = 0; i < numMatrices; i++) {
+                String expression = matrixFields[i][j][k].getText();
+                if (expression.isEmpty()) expression = "0"; // إذا كانت الخلية فارغة اعتبرها 0
 
-                    try {
-                        Map<String, Double> terms = parseExpression(expression);
-                        for (String var : terms.keySet()) {
-                            totalTerms.put(var, totalTerms.getOrDefault(var, 0.0) + terms.get(var));
-                        }
-                    } catch (Exception e) {
-                        System.err.println("خطأ في المدخلات في الخلية [" + i + "][" + j + "][" + k + "]: " + expression);
+                try {
+                    Map<String, Double> terms = parseExpression(expression);
+                    for (String var : terms.keySet()) {
+                        totalTerms.put(var, totalTerms.getOrDefault(var, 0.0) + terms.get(var));
                     }
+                } catch (Exception e) {
+                    System.err.println("خطأ في المدخلات في الخلية [" + i + "][" + j + "][" + k + "]: " + expression);
                 }
-
-                resultMatrix[j][k] = formatResult(totalTerms);
             }
-        }
 
-        displaySumMatrixWithVariables(resultMatrix);
+            // تحقق من المتغيرات المتقابلة مثل (+x و -x) وضع صفر في هذه الحالة
+            for (Map.Entry<String, Double> entry : totalTerms.entrySet()) {
+                String variable = entry.getKey();
+                double coefficient = entry.getValue();
+
+                // إذا كانت قيمة المعامل قريبة من صفر (لتصفير القيم المتقابلة بعكس الإشارة)
+                if (Math.abs(coefficient) < 1e-10) {
+                    totalTerms.put(variable, 0.0); // اجعلها صفر
+                }
+            }
+
+            // تنسيق الناتج بحيث لا يظهر المتغيرات أو المعاملات التي قيمتها صفر
+            resultMatrix[j][k] = formatResult(totalTerms);
+        }
     }
+
+    displaySumMatrixWithVariables(resultMatrix);
+}
+
 
 
 
@@ -2004,6 +2051,7 @@ private Object[][] invertMatrix(Double[][] matrix) throws Exception {
     dialog.setLocationRelativeTo(null); // جعل النافذة تظهر في المنتصف
     dialog.setVisible(true);
 }
+
     
     private JPanel createMatrixPanel(JTextField[][] matrixFields, int rows, int cols, int matrixIndex) {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -2079,6 +2127,7 @@ private void openMatrixInputPanels(int numMatrices, int rows, int cols) {
         JButton sumButton = new JButton("جمع المصفوفات");
         sumButton.addActionListener(e -> {
             if (!areAllFieldsValid(matrixFields, numMatrices, rows, cols)) {
+                
                 showErrorMessage("يرجى إدخال قيم صالحة في جميع الخلايا.");
                 return;
             }
@@ -2093,71 +2142,102 @@ private void openMatrixInputPanels(int numMatrices, int rows, int cols) {
 
 
 private void displaySumMatrixWithVariables(String[][] resultMatrix) {
-        JFrame resultFrame = new JFrame("Matrix Result");
-        resultFrame.setSize(500, 500);
+    JFrame resultFrame = new JFrame("Matrix Result");
+    resultFrame.setSize(500, 500);
 
-        JPanel panel = new JPanel(new GridLayout(resultMatrix.length, resultMatrix[0].length, 5, 5));
-        for (String[] row : resultMatrix) {
-            for (String cell : row) {
-                JTextField textField = new JTextField(cell);
-                textField.setHorizontalAlignment(JTextField.CENTER);
-                textField.setEditable(false);
-                panel.add(textField);
-            }
+    JPanel panel = new JPanel(new GridLayout(resultMatrix.length, resultMatrix[0].length, 5, 5));
+    for (String[] row : resultMatrix) {
+        for (String cell : row) {
+            JTextField textField = new JTextField(cell);
+            textField.setHorizontalAlignment(JTextField.CENTER);
+            textField.setEditable(false);
+            panel.add(textField);
         }
-
-        resultFrame.add(new JScrollPane(panel));
-        resultFrame.setLocationRelativeTo(null);
-        resultFrame.setVisible(true);
     }
+
+    resultFrame.add(new JScrollPane(panel));
+    resultFrame.setLocationRelativeTo(null);
+    resultFrame.setVisible(true);
+}
+
 
 private String formatResult(Map<String, Double> terms) {
-        StringBuilder result = new StringBuilder();
+    StringBuilder result = new StringBuilder();
 
-        if (terms.containsKey("constant")) {
-            result.append(terms.get("constant")).append(" ");
-            terms.remove("constant");
-        }
+    // إزالة المعاملات القريبة من الصفر
+    terms.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1e-10);
 
-        for (String var : terms.keySet()) {
-            double coefficient = terms.get(var);
-            if (coefficient != 0) {
-                if (result.length() > 0 && coefficient > 0) {
-                    result.append("+ ");
-                }
-                result.append(coefficient).append(var).append(" ");
-            }
-        }
-
-        return result.toString().trim();
+    // إذا كان هناك قيمة ثابتة (constant) أضفها أولاً
+    if (terms.containsKey("constant")) {
+        result.append(terms.get("constant")).append(" ");
+        terms.remove("constant");
     }
+
+    // أضف المتغيرات مع معاملة القيم السالبة بشكل صحيح
+    for (Map.Entry<String, Double> entry : terms.entrySet()) {
+        double coefficient = entry.getValue();
+        if (coefficient != 0) { // فقط أضف المتغيرات غير الصفرية
+            if (result.length() > 0 && coefficient > 0) {
+                result.append("+ ");
+            }
+            result.append(coefficient).append(entry.getKey()).append(" ");
+        }
+    }
+
+    // إذا كانت النتيجة فارغة (أي جميع المعاملات أصبحت صفرًا)، فإعرض صفر
+    if (result.length() == 0) {
+        return "0";
+    }
+
+    return result.toString().trim();
+}
+
+
+
 
 // دالة التحقق من صحة المدخلات (تقبل الأرقام والحروف فقط)
 
 
 private void validateCellInput(JTextField textField) {
-        String text = textField.getText();
-        if (!text.matches("-?\\d*(\\.\\d+)?([a-zA-Z])?")) {
-            textField.setBackground(Color.RED);
-        } else {
-            textField.setBackground(Color.WHITE);
-        }
+    String text = textField.getText();
+    if (text.isEmpty() || !text.matches("-?\\d*(\\.\\d+)?([a-zA-Z])?")) {
+        textField.setBackground(Color.RED); // إذا كان النص فارغًا أو غير صالح
+    } else {
+        textField.setBackground(Color.WHITE); // إذا كان الإدخال صالحًا
     }
+}
+
+
 
 // دالة للتحقق من صلاحية جميع الحقول في المصفوفات
 private boolean areAllFieldsValid(JTextField[][][] matrixFields, int numMatrices, int rows, int cols) {
-        for (int i = 0; i < numMatrices; i++) {
-            for (int j = 0; j < rows; j++) {
-                for (int k = 0; k < cols; k++) {
-                    String text = matrixFields[i][j][k].getText();
+    boolean allValid = true; // افتراض أن جميع الخلايا صالحة
+
+    for (int i = 0; i < numMatrices; i++) {
+        for (int j = 0; j < rows; j++) {
+            for (int k = 0; k < cols; k++) {
+                String text = matrixFields[i][j][k].getText();
+                // إذا كانت الخلية فارغة
+                if (text.isEmpty()) {
+                    matrixFields[i][j][k].setBackground(Color.RED); // تغيير اللون إلى الأحمر
+                    allValid = false;
+                } else {
+                    // التحقق من أن القيمة المدخلة صحيحة (رقم أو رقم مع متغيرات)
                     if (!text.matches("-?\\d*(\\.\\d+)?([a-zA-Z])?")) {
-                        return false;
+                        matrixFields[i][j][k].setBackground(Color.RED); // تغيير اللون إلى الأحمر
+                        allValid = false;
+                    } else {
+                        matrixFields[i][j][k].setBackground(Color.WHITE); // إعادة اللون الأبيض إذا كانت القيمة صحيحة
                     }
                 }
             }
         }
-        return true;
     }
+    
+    return allValid;
+}
+
+
 
 
 
@@ -2216,6 +2296,14 @@ private void displaySumMatrix21(Object[][] sumMatrix) {
     int rows = sumMatrix.length;
     int cols = sumMatrix[0].length;
     StringBuilder resultText = new StringBuilder("مصفوفة الناتج:\n");
+
+    // التحقق من وجود حروف أو متغيرات
+    if (containsVariables(sumMatrix)) {
+        showErrorMessage("المصفوفة تحتوي على متغيرات، لا يمكن حساب المحدد أو المعكوس.");
+        return;
+    }
+
+    // بناء نص المصفوفة
     for (Object[] row : sumMatrix) {
         for (Object val : row) {
             resultText.append(String.format("%8.2f", val)).append(" ");
@@ -2241,6 +2329,7 @@ private void displaySumMatrix21(Object[][] sumMatrix) {
     JDialog dialog = new JOptionPane(resultPanel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.DEFAULT_OPTION).createDialog(this, "مصفوفة الناتج");
     dialog.setSize(400, 300);
 
+    // إذا كانت المصفوفة مربعة
     if (rows == cols) {
         JButton determinantButton = new JButton("احسب المحدد");
         determinantButton.addActionListener(new ActionListener() {
@@ -2284,6 +2373,22 @@ private void displaySumMatrix21(Object[][] sumMatrix) {
     dialog.setLocationRelativeTo(null); // التأكد من عرض النافذة في المنتصف
     dialog.setVisible(true);
 }
+
+// التحقق من وجود حروف أو متغيرات في المصفوفة
+private boolean containsVariables(Object[][] matrix) {
+    for (Object[] row : matrix) {
+        for (Object element : row) {
+            if (element instanceof String && ((String) element).matches(".*[a-zA-Z]+.*")) {
+                return true; // تحتوي على حروف أو متغيرات
+            }
+        }
+    }
+    return false; // لا تحتوي على متغيرات
+}
+
+
+
+
 private Double toDouble(Object value) {
     if (value instanceof Double) {
         return (Double) value;
@@ -2302,13 +2407,15 @@ private Double toDouble(Object value) {
 private void checkAndPerformCalculation(JTextField[][][] matrixFields, int numMatrices, int rows, int cols) {
     // التحقق من صحة المدخلات قبل القيام بأي عمليات حسابية
     if (!areAllFieldsValid(matrixFields, numMatrices, rows, cols)) {
-        showErrorMessage("يرجى إدخال قيم صالحة في جميع الخلايا.");
+        showErrorMessage("يرجى إدخال قيم صالحة في جميع الخلايا. لا يجب ترك أي خلية فارغة.");
         return;
     }
 
     // إجراء العمليات الحسابية بعد التأكد من صحة المدخلات
-    // على سبيل المثال: sumMatricesWithVariables(matrixFields, rows, cols, numMatrices);
+    sumMatricesWithVariables(matrixFields, rows, cols, numMatrices);
 }
+
+
 
 private void showResult(String message, String title) {
     JTextArea resultArea = new JTextArea(message);
@@ -2505,135 +2612,314 @@ generateButton.addActionListener(new ActionListener() {
     }
 });
     }//GEN-LAST:event_jButton5ActionPerformed
-    private void openMatrixInputPanel(int numMatrices, int rows, int cols) {
-    // التحقق من أن الأبعاد أكبر من صفر
-    if (rows <= 0 || cols <= 0) {
-        JOptionPane.showMessageDialog(null, "عدد الصفوف والأعمدة يجب أن يكون أكبر من الصفر.", "خطأ", JOptionPane.ERROR_MESSAGE);
-        return; // إنهاء الدالة إذا كانت الأبعاد غير صحيحة
+    private Map<String, Double> parseExpression1(String expression) {
+    Map<String, Double> terms = new HashMap<>();
+    String[] parts = expression.split("\\s*\\+\\s*");
+
+    for (String part : parts) {
+        if (part.matches("-?\\d+(\\.\\d+)?")) { // رقم ثابت
+            terms.put("constant", terms.getOrDefault("constant", 0.0) + Double.parseDouble(part));
+        } else if (part.matches("-?\\d*(\\.\\d+)?[a-zA-Z]")) { // متغير بمعامل
+            String variable = part.replaceAll("-?\\d*(\\.\\d+)?", "");
+            double coefficient = Double.parseDouble(part.replace(variable, "").isEmpty() ? "1" : part.replace(variable, ""));
+            terms.put(variable, terms.getOrDefault(variable, 0.0) + coefficient);
+        } else {
+            throw new IllegalArgumentException("تعبير غير صالح: " + part);
+        }
+    }
+    return terms;
+}
+
+
+private boolean isValidInput1(String text) {
+    // التحقق من أن المدخل يتكون من أرقام، متغيرات، وعلامات طرح فقط
+    return text.matches("(-?\\d*(\\.\\d+)?[a-zA-Z]?\\s*\\-\\s*)*(-?\\d*(\\.\\d+)?[a-zA-Z]?)") && text.length() <= 50;
+}
+
+private void subtractMatricesWithVariables1(JTextField[][][] matrixFields, int rows, int cols, int numMatrices) {
+    String[][] resultMatrix = new String[rows][cols];
+
+    for (int j = 0; j < rows; j++) {
+        for (int k = 0; k < cols; k++) {
+            Map<String, Double> totalTerms = new HashMap<>();
+
+            // طرح القيم من كل مصفوفة
+            for (int i = 0; i < numMatrices; i++) {
+                String expression = matrixFields[i][j][k].getText();
+                if (expression.isEmpty()) expression = "0";
+
+                try {
+                    Map<String, Double> terms = parseExpression1(expression);
+                    for (String var : terms.keySet()) {
+                        // لا نضيف القيم، بل نطرحها بشكل صحيح من القيم الأخرى
+                        if (i == 0) {
+                            // المصفوفة الأولى نضيف قيمها
+                            totalTerms.put(var, terms.get(var));
+                        } else {
+                            // المصفوفات التالية نطرح قيمها
+                            totalTerms.put(var, totalTerms.getOrDefault(var, 0.0) - terms.get(var));
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("خطأ في المدخلات في الخلية [" + i + "][" + j + "][" + k + "]: " + expression);
+                }
+            }
+
+            // تحقق من المتغيرات المتقابلة مثل (+x و -x) وضع صفر في هذه الحالة
+            for (Map.Entry<String, Double> entry : totalTerms.entrySet()) {
+                String variable = entry.getKey();
+                double coefficient = entry.getValue();
+                
+                if (Math.abs(coefficient) < 1e-10) {  // إذا كانت القيمة قريبة من صفر
+                    totalTerms.put(variable, 0.0);  // اجعلها صفر
+                }
+            }
+
+            resultMatrix[j][k] = formatResult1(totalTerms);
+        }
+    }
+
+    displaySubtractMatrixWithVariables1(resultMatrix);
+}
+
+
+
+private void showErrorMessage1(String message) {
+    JOptionPane optionPane = new JOptionPane(message, JOptionPane.ERROR_MESSAGE);
+    JDialog dialog = optionPane.createDialog(null, "خطأ");
+    dialog.setLocationRelativeTo(null); // جعل النافذة تظهر في المنتصف
+    dialog.setVisible(true);
+}
+
+private JPanel createMatrixPanel1(JTextField[][] matrixFields, int rows, int cols, int matrixIndex) {
+    JPanel panel = new JPanel(new GridBagLayout());
+    GridBagConstraints gbc = new GridBagConstraints();
+
+    // عنوان المصفوفة
+    String labelName = (matrixIndex < 26) ? String.valueOf((char) ('A' + matrixIndex)) : "M" + (matrixIndex + 1);
+    JLabel label = new JLabel("مصفوفة " + labelName, SwingConstants.CENTER);
+    label.setFont(new Font("Arial", Font.BOLD, 18));
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.gridwidth = cols;
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    panel.add(label, gbc);
+
+    // إدخال القيم
+    for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            matrixFields[i][j] = new JTextField(5);
+            matrixFields[i][j].setHorizontalAlignment(JTextField.CENTER);
+            matrixFields[i][j].setFont(new Font("Arial", Font.PLAIN, 14));
+
+            gbc.gridx = j;
+            gbc.gridy = i + 1;
+            gbc.gridwidth = 1;
+
+            // التحقق من صحة الإدخال
+            JTextField field = matrixFields[i][j];
+            field.getDocument().addDocumentListener(new DocumentListener() {
+                @Override
+                public void insertUpdate(DocumentEvent e) { validateCellInput1(field); }
+                @Override
+                public void removeUpdate(DocumentEvent e) { validateCellInput1(field); }
+                @Override
+                public void changedUpdate(DocumentEvent e) { validateCellInput1(field); }
+            });
+
+            panel.add(matrixFields[i][j], gbc);
+        }
+    }
+    return panel;
+}
+
+private void showMessage1(String message, String title) {
+    JOptionPane optionPane = new JOptionPane(message, JOptionPane.INFORMATION_MESSAGE);
+    JDialog dialog = optionPane.createDialog(null, title);
+    dialog.setLocationRelativeTo(null); // جعل النافذة تظهر في المنتصف
+    dialog.setVisible(true);
+}
+
+private void openMatrixInputPanels1(int numMatrices, int rows, int cols) {
+    if (rows <= 0 || cols <= 0 || numMatrices <= 0) {
+        showErrorMessage1("عدد المصفوفات، الصفوف والأعمدة يجب أن يكونوا أكبر من 0.");
+        return;
     }
 
     JFrame matrixFrame = new JFrame("إدخال القيم للمصفوفات");
-    matrixFrame.setSize(400, 400);
+    matrixFrame.setSize(600, 600);
 
-    // جعل نافذة الإطار تظهر في المنتصف
-    matrixFrame.setLocationRelativeTo(null); 
-
-    // إنشاء JPanel مع تخطيط GridLayout
     JPanel matrixPanel = new JPanel(new GridLayout(numMatrices, 1));
-
-    // مصفوفة ثلاثية الأبعاد لحفظ الحقول لجميع المصفوفات
     JTextField[][][] matrixFields = new JTextField[numMatrices][rows][cols];
+
+    // إنشاء مصفوفات الإدخال
     for (int i = 0; i < numMatrices; i++) {
-        JPanel singleMatrixPanel = new JPanel(new GridBagLayout()); // استخدام GridBagLayout
-        GridBagConstraints gbc = new GridBagConstraints();
-
-        // حساب التسمية المناسبة بناءً على الفهرس i
-        String labelName;
-        if (i < 26) {
-            // استخدام حرف أبجدي واحد للحالات من A إلى Z
-            labelName = String.valueOf((char) ('A' + i));
-        } else {
-            // استخدام حرفين مكررين (مثل AA، BB، ...) للحالات الأكبر من Z
-            char repeatedChar = (char) ('A' + (i - 26));
-            labelName = String.valueOf(repeatedChar) + repeatedChar;
-        }
-
-        JLabel label = new JLabel("مصفوفة " + labelName); // تعيين التسمية المناسبة
-        label.setHorizontalAlignment(SwingConstants.CENTER); // محاذاة التسمية في المنتصف
-
-        // تعيين حجم الخط إلى 24 وجعله بخط عريض
-        label.setFont(new Font("Arial", Font.BOLD, 24));
-
-        // إعداد قيود GridBag لملء الصف
-        gbc.gridx = 0;
-        gbc.gridy = 0;
-        gbc.gridwidth = cols; // جعل التسمية تأخذ عرض كامل المصفوفة
-        gbc.fill = GridBagConstraints.HORIZONTAL; // ملء المساحة الأفقية
-        singleMatrixPanel.add(label, gbc); // إضافة التسمية في الأعلى
-
-        // إنشاء حقول الإدخال لكل عنصر في المصفوفة
-        for (int j = 0; j < rows; j++) {
-            for (int k = 0; k < cols; k++) {
-                matrixFields[i][j][k] = new JTextField(5);
-                matrixFields[i][j][k].setPreferredSize(new Dimension(50, 25)); // تعيين الحجم المفضل
-                gbc.gridx = k; // تعيين موضع الحقل
-                gbc.gridy = j + 1; // تعيين الصف (بدءًا من الصف 1 بعد التسمية)
-                gbc.gridwidth = 1; // جعل الحقل يأخذ عرض عمود واحد
-                singleMatrixPanel.add(matrixFields[i][j][k], gbc); // إضافة حقول الإدخال
-            }
-        }
-        matrixPanel.add(singleMatrixPanel); // إضافة المصفوفة إلى اللوحة الرئيسية
+        JPanel singleMatrixPanel = createMatrixPanel1(matrixFields[i], rows, cols, i);
+        matrixPanel.add(singleMatrixPanel);
     }
 
-    // إضافة JScrollPane لتوفير إمكانية التمرير
     JScrollPane scrollPane = new JScrollPane(matrixPanel);
-    scrollPane.setPreferredSize(new Dimension(380, 300)); // تعيين الحجم المفضل لـ JScrollPane
+    scrollPane.setPreferredSize(new Dimension(580, 400));
 
     JButton subtractButton = new JButton("طرح المصفوفات");
-    subtractButton.addActionListener(new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            Double[][] resultMatrix = new Double[rows][cols]; // مصفوفة من النوع Double
-            try {
-                // حساب طرح القيم من جميع المصفوفات
-                for (int i = 0; i < numMatrices; i++) {
-                    for (int j = 0; j < rows; j++) {
-                        for (int k = 0; k < cols; k++) {
-                            // إذا كانت هذه هي المصفوفة الأولى، نأخذ القيم منها
-                            if (i == 0) {
-                                resultMatrix[j][k] = Double.parseDouble(matrixFields[i][j][k].getText());
-                            } else {
-                                // بالنسبة للمصفوفات الأخرى، نطرح القيم
-                                resultMatrix[j][k] -= Double.parseDouble(matrixFields[i][j][k].getText());
-                            }
-                        }
-                    }
-                }
-                displaySumMatrix21(resultMatrix); // عرض الناتج
-                matrixFrame.dispose(); // إغلاق نافذة إدخال المصفوفات
-            } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(matrixFrame, "يرجى إدخال أرقام صحيحة فقط", "خطأ", JOptionPane.ERROR_MESSAGE);
-            }
+    subtractButton.addActionListener(e -> {
+        if (!areAllFieldsValid1(matrixFields, numMatrices, rows, cols)) {
+            showErrorMessage1("يرجى إدخال قيم صالحة في جميع الخلايا.");
+            return;
         }
+        subtractMatricesWithVariables1(matrixFields, rows, cols, numMatrices);
     });
 
-    matrixFrame.add(scrollPane, BorderLayout.CENTER); // إضافة JScrollPane إلى الإطار
+    matrixFrame.add(scrollPane, BorderLayout.CENTER);
     matrixFrame.add(subtractButton, BorderLayout.SOUTH);
+    matrixFrame.setLocationRelativeTo(null);
     matrixFrame.setVisible(true);
 }
+
+private void displaySubtractMatrixWithVariables1(String[][] resultMatrix) {
+    JFrame resultFrame = new JFrame("Matrix Result");
+    resultFrame.setSize(500, 500);
+
+    JPanel panel = new JPanel(new GridLayout(resultMatrix.length, resultMatrix[0].length, 5, 5));
+    for (String[] row : resultMatrix) {
+        for (String cell : row) {
+            JTextField textField = new JTextField(cell);
+            textField.setHorizontalAlignment(JTextField.CENTER);
+            textField.setEditable(false);
+            panel.add(textField);
+        }
+    }
+
+    resultFrame.add(new JScrollPane(panel));
+    resultFrame.setLocationRelativeTo(null);
+    resultFrame.setVisible(true);
+}
+
+private String formatResult1(Map<String, Double> terms) {
+    StringBuilder result = new StringBuilder();
+
+    // تحقق من وجود معاملات صفرية وإزالتها
+    terms.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1e-10); // معامل يقترب من الصفر
+
+    // تحقق من وجود قيمة ثابتة (constant) وأضفها إلى النتيجة
+    if (terms.containsKey("constant")) {
+        result.append(terms.get("constant")).append(" ");
+        terms.remove("constant");
+    }
+
+    // أضف المتغيرات إلى النتيجة مع حذف أي معاملات صفرية
+    for (Map.Entry<String, Double> entry : terms.entrySet()) {
+        double coefficient = entry.getValue();
+        if (coefficient != 0) { // فقط أضف القيم غير الصفرية
+            if (result.length() > 0 && coefficient < 0) {
+                result.append("- ");
+            }
+            result.append(Math.abs(coefficient)).append(entry.getKey()).append(" ");
+        }
+    }
+
+    // إذا كانت النتيجة فارغة (أي أن جميع المعاملات أصبحت صفرًا)، فإعرض صفر
+    if (result.length() == 0) {
+        return "0";
+    }
+
+    return result.toString().trim();
+}
+
+private void validateCellInput1(JTextField textField) {
+    String text = textField.getText();
+    if (text.isEmpty() || isValidInput1(text)) {
+        textField.setBackground(Color.WHITE);
+    } else {
+        textField.setBackground(Color.RED);
+    }
+}
+
+private boolean areAllFieldsValid1(JTextField[][][] matrixFields, int numMatrices, int rows, int cols) {
+    for (int i = 0; i < numMatrices; i++) {
+        for (int j = 0; j < rows; j++) {
+            for (int k = 0; k < cols; k++) {
+                String value = matrixFields[i][j][k].getText();
+                if (value.isEmpty() || !isValidInput1(value)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+//private boolean isValidInput1(String text) {
+//    return text.matches("-?\\d*(\\.\\d+)?[a-zA-Z]?\\s*\\-\\s*-?\\d*(\\.\\d+)?[a-zA-Z]?") || text.matches("(-?\\d*(\\.\\d+)?[a-zA-Z]?\\s*\\-\\s*)*(-?\\d*(\\.\\d+)?[a-zA-Z]?)");
+//}
 
 
     
     
     private void jButton7ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton7ActionPerformed
-        JPanel panel = new JPanel(new FlowLayout());
-Font font = new Font("Arial", Font.PLAIN, 24);
+        JPanel panel = new JPanel(new GridBagLayout());
+panel.setBackground(Color.BLACK);
+GridBagConstraints gbc = new GridBagConstraints();
+Font font = new Font("Arial", Font.PLAIN, 18);
 
-JTextField numMatricesField = new JTextField(8);  // عرض متوسط
+gbc.fill = GridBagConstraints.HORIZONTAL;
+gbc.insets = new Insets(5, 0, 5, 0); // مساحة بين العناصر
+
+// إعداد الـ JLabel ليكون بعرض الـ JFrame
+JLabel matricesLabel = new JLabel("ادخل عدد المصفوفات:", SwingConstants.CENTER);
+matricesLabel.setFont(font);
+matricesLabel.setForeground(Color.YELLOW);
+matricesLabel.setOpaque(true);
+matricesLabel.setBackground(Color.BLACK);
+gbc.gridx = 0;
+gbc.gridy = 0;
+gbc.gridwidth = 2;
+panel.add(matricesLabel, gbc);
+
+// إعداد JTextField مع JLabel بجانبه
+gbc.gridwidth = 1;
+gbc.gridx = 0;
+gbc.gridy = 1;
+JTextField numMatricesField = new JTextField(7); // مضاعفة العرض
 numMatricesField.setFont(font);
+gbc.anchor = GridBagConstraints.CENTER;
+panel.add(numMatricesField, gbc);
 
-JTextField rowsField = new JTextField(8);  // إدخال عدد الصفوف بعرض متوسط
+gbc.gridx = 0;
+gbc.gridy = 2;
+JLabel rowsLabel = new JLabel("ادخل عدد الصفوف:", SwingConstants.CENTER);
+rowsLabel.setFont(font);
+rowsLabel.setForeground(Color.YELLOW);
+panel.add(rowsLabel, gbc);
+
+gbc.gridy = 3;
+JTextField rowsField = new JTextField(7); // مضاعفة العرض
 rowsField.setFont(font);
+panel.add(rowsField, gbc);
 
-JTextField colsField = new JTextField(8);  // إدخال عدد الأعمدة بعرض متوسط
+gbc.gridy = 4;
+JLabel colsLabel = new JLabel("ادخل عدد الأعمدة:", SwingConstants.CENTER);
+colsLabel.setFont(font);
+colsLabel.setForeground(Color.YELLOW);
+panel.add(colsLabel, gbc);
+
+gbc.gridy = 5;
+JTextField colsField = new JTextField(7); // مضاعفة العرض
 colsField.setFont(font);
+panel.add(colsField, gbc);
 
+// إعداد الزر
 JButton generateButton = new JButton("إنشاء المصفوفات");
 generateButton.setFont(font);
-
-panel.add(new JLabel("ادخل عدد المصفوفات:"));
-panel.add(numMatricesField);
-panel.add(new JLabel("ادخل عدد الصفوف:"));
-panel.add(rowsField);
-panel.add(new JLabel("ادخل عدد الأعمدة:"));
-panel.add(colsField);
-panel.add(generateButton);
+generateButton.setBackground(Color.BLACK);
+generateButton.setForeground(Color.YELLOW);
+gbc.gridy = 6;
+gbc.gridwidth = 2;
+panel.add(generateButton, gbc);
 
 JFrame inputFrame = new JFrame("إدخال عدد وحجم المصفوفات");
-inputFrame.setSize(400, 200);
+inputFrame.setSize(400, 300);
 inputFrame.add(panel);
-
-// جعل النافذة تظهر في المنتصف
 inputFrame.setLocationRelativeTo(null);
 inputFrame.setVisible(true);
 
@@ -2646,17 +2932,18 @@ generateButton.addActionListener(new ActionListener() {
             int cols = Integer.parseInt(colsField.getText());
 
             if (numMatrices <= 0 || rows <= 0 || cols <= 0) {
-                JOptionPane.showMessageDialog(null, "عدد المصفوفات، الصفوف والأعمدة يجب أن يكونوا أكبر من 0", "خطأ", JOptionPane.ERROR_MESSAGE);
-                return; // عدم متابعة العملية إذا كانت الأبعاد غير صالحة
+                showErrorMessage("عدد المصفوفات، الصفوف والأعمدة يجب أن يكونوا أكبر من 0");
+                return;
             }
 
-            inputFrame.dispose(); // إغلاق نافذة الإدخال
-            openMatrixInputPanel(numMatrices, rows, cols); // فتح نافذة إدخال المصفوفات
+            inputFrame.dispose();
+            openMatrixInputPanels1(numMatrices, rows, cols);
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(null, "يرجى إدخال أرقام صحيحة أكبر من 0", "خطأ", JOptionPane.ERROR_MESSAGE);
+            showErrorMessage("يرجى إدخال أرقام صحيحة أكبر من 0");
         }
     }
 });
+
 
 
     }//GEN-LAST:event_jButton7ActionPerformed
@@ -2665,6 +2952,10 @@ generateButton.addActionListener(new ActionListener() {
     
 //    private Object[][] savedMatrix = matrix;
 private void openMatrixInputDialogForMultiplication() {
+    // التأكد من تهيئة المصفوفات قبل استخدامها
+    numericMatrix = null; // إعادة تهيئة المصفوفة
+    stringMatrix = null; // إعادة تهيئة المصفوفة
+
     JPanel panel = new JPanel(new FlowLayout());
     JTextField rowsField = new JTextField(6);
     JTextField colsField = new JTextField(6);
@@ -2706,6 +2997,8 @@ private void openMatrixInputDialogForMultiplication() {
         }
     });
 }
+
+
 private String[][] stringMatrix;
 
 Double[][] numericMatrix;
@@ -2716,9 +3009,8 @@ private void openMatrixPanelForMultiplication(int rows, int cols, double multipl
 
     JPanel matrixPanel = new JPanel(new GridLayout(rows, cols, 5, 5));
     JTextField[][] matrixFields = new JTextField[rows][cols];
-    matrix = new String[rows][cols];  // مصفوفة للمتغيرات
+    stringMatrix = new String[rows][cols];  // مصفوفة للمتغيرات
     numericMatrix = new Double[rows][cols]; // مصفوفة للأرقام
-
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
@@ -2731,27 +3023,37 @@ private void openMatrixPanelForMultiplication(int rows, int cols, double multipl
     saveButton.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            try {
-                // في الحلقة هذه نحفظ المدخلات في المصفوفات
-                for (int i = 0; i < rows; i++) {
-                    for (int j = 0; j < cols; j++) {
-                        String input = matrixFields[i][j].getText();
-                        matrix[i][j] = input;  // حفظ المتغيرات والنصوص
+            boolean validInput = true;  // لتتبع ما إذا كانت جميع الخلايا تحتوي على مدخلات صالحة
 
-                        // تحقق إذا كانت القيمة رقمية
+            // حفظ المدخلات في المصفوفات
+            for (int i = 0; i < rows; i++) {
+                for (int j = 0; j < cols; j++) {
+                    String input = matrixFields[i][j].getText();
+
+                    // التحقق من صحة المدخلات (رقم أو حرف)
+                    if (input.matches("[0-9]+[A-Za-z]+") || input.matches("[A-Za-z]+")) {
+                        stringMatrix[i][j] = input;
                         try {
-                            numericMatrix[i][j] = Double.parseDouble(input);  // حفظ الأرقام
+                            numericMatrix[i][j] = Double.parseDouble(input);  // إذا كان رقماً
                         } catch (NumberFormatException ex) {
-                            numericMatrix[i][j] = null; // في حالة كانت قيمة غير رقمية
+                            numericMatrix[i][j] = null;  // إذا كان متغيراً
                         }
+                    } else {
+                        matrixFields[i][j].setBackground(Color.RED);  // تغيير الخلفية إلى الأحمر في حالة الخطأ
+                        validInput = false; // تعيين حالة الإدخال إلى غير صالحة
                     }
                 }
+            }
 
-                Double[][] resultMatrix = (Double[][]) multiplyMatrixByScalar(numericMatrix, (String[][]) matrix, multiplier);  // ضرب المصفوفة بالأرقام والمتغيرات
+            if (validInput) {
+                Object[][] resultMatrix = multiplyMatrixByScalar(numericMatrix, stringMatrix, multiplier);
                 displayResultMatrix(resultMatrix);
                 matrixFrame.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(matrixFrame, "يرجى إدخال قيم صحيحة فقط", "خطأ", JOptionPane.ERROR_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(matrixFrame,
+                    "يرجى إدخال أرقام أو أحرف بشكل صحيح، مع التأكد من أن الرقم يأتي أولاً.",
+                    "خطأ",
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     });
@@ -2764,19 +3066,21 @@ private void openMatrixPanelForMultiplication(int rows, int cols, double multipl
 
 
 
+
 private void askForModificationOrMultiplier() {
-    if (matrix != null) {
+    if (numericMatrix != null && stringMatrix != null && numericMatrix.length > 0 && stringMatrix.length > 0) {
         int option = JOptionPane.showConfirmDialog(null, "هل تريد تعديل المصفوفة الحالية؟", "تعديل المصفوفة", JOptionPane.YES_NO_OPTION);
         if (option == JOptionPane.YES_OPTION) {
             openMatrixPanelForModification();
         } else {
-            askForMultiplier();
+            askForMultiplier();  // إذا اختار المستخدم عدم التعديل، نطلب المعامل للضرب
         }
     } else {
         JOptionPane.showMessageDialog(null, "لا توجد مصفوفة محفوظة. يرجى إنشاء مصفوفة جديدة.");
-        openMatrixInputDialogForMultiplication();
+        openMatrixInputDialogForMultiplication();  // فتح نافذة لإنشاء المصفوفة
     }
 }
+
 
 private void openMatrixPanelForModification() {
     int rows = matrix.length;
@@ -2819,15 +3123,16 @@ private void openMatrixPanelForModification() {
 }
 
 private void askForMultiplier() {
+    if (numericMatrix == null || stringMatrix == null || numericMatrix.length == 0 || stringMatrix.length == 0) {
+        JOptionPane.showMessageDialog(null, "المصفوفات غير موجودة أو لم يتم تهيئتها بعد. يرجى إنشاء المصفوفة أولاً.", "خطأ", JOptionPane.ERROR_MESSAGE);
+        openMatrixInputDialogForMultiplication();  // افتح نافذة إنشاء المصفوفة
+        return;
+    }
+
     try {
         Double multiplier = Double.parseDouble(JOptionPane.showInputDialog("أدخل العدد لضربه في المصفوفة:"));
-        
-        // التأكد من أن المصفوفة تحتوي على كل من الأرقام والمتغيرات
-        if (numericMatrix == null || stringMatrix == null) {
-            JOptionPane.showMessageDialog(null, "المصفوفات غير موجودة أو لم يتم تهيئتها.", "خطأ", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
 
+        // ضرب المصفوفة بالقيمة المدخلة
         Object[][] resultMatrix = multiplyMatrixByScalar(numericMatrix, stringMatrix, multiplier);
         displayResultMatrix(resultMatrix);
     } catch (NumberFormatException ex) {
@@ -2837,27 +3142,37 @@ private void askForMultiplier() {
 
 
 
+
+
+
 private Object[][] multiplyMatrixByScalar(Double[][] numericMatrix, String[][] stringMatrix, double scalar) {
     int rows = numericMatrix.length;
     int cols = numericMatrix[0].length;
-    Object[][] resultMatrix = new Object[rows][cols];  // تغيير إلى Object لدعم الأرقام والمتغيرات
+    Object[][] resultMatrix = new Object[rows][cols];
 
     for (int i = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             if (numericMatrix[i][j] != null) {
-                resultMatrix[i][j] = numericMatrix[i][j] * scalar;  // ضرب الأرقام
+                // ضرب الأرقام في المعامل
+                resultMatrix[i][j] = numericMatrix[i][j] * scalar;
             } else {
-                String cell = stringMatrix[i][j]; // التعامل مع المتغيرات مثل "x"
+                String cell = stringMatrix[i][j]; // التعامل مع المتغيرات مثل "X"
                 if (isVariable(cell)) {
-                    resultMatrix[i][j] = scalar + " * " + cell;  // نعرض "2x" مثلاً
+                    String[] parts = cell.split("(?<=\\d)(?=\\D)"); // تقسيم القيمة إلى جزئين (رقم وحرف)
+                    double coefficient = Double.parseDouble(parts[0]);  // الحصول على المعامل
+                    String variable = parts[1];  // الحصول على المتغير
+
+                    // ضرب المعامل في الرقم
+                    resultMatrix[i][j] = (coefficient * scalar) + variable;
                 } else {
-                    resultMatrix[i][j] = null;  // في حالة قيمة غير صالحة
+                    resultMatrix[i][j] = null;  // إذا كانت القيمة غير صالحة
                 }
             }
         }
     }
     return resultMatrix;
 }
+
 
 
 
@@ -2884,6 +3199,7 @@ private void displayResultMatrix(Object[][] matrix) {
     resultFrame.setLocationRelativeTo(null);
     resultFrame.setVisible(true);
 }
+
 
 
 
@@ -3614,6 +3930,25 @@ private void displayResultMatrix2(Object[][] resultMatrix) {
         showMatrixOptionsDialog1();
     }//GEN-LAST:event_jButton8ActionPerformed
 
+    
+    private void addHoverEffectToButton() {
+    // إضافة تأثيرات الماوس على الزر
+    infobtn.addMouseListener(new java.awt.event.MouseAdapter() {
+        @Override
+        public void mouseEntered(java.awt.event.MouseEvent evt) {
+            infobtn.setBackground(Color.YELLOW); // تغيير اللون عند مرور الماوس
+            infobtn.setForeground(Color.BLACK);  // تغيير لون النص
+        }
+
+        @Override
+        public void mouseExited(java.awt.event.MouseEvent evt) {
+            infobtn.setBackground(Color.BLACK); // اللون الأصلي عند الخروج
+            infobtn.setForeground(Color.YELLOW);  // لون النص الأصلي
+        }
+    });
+}
+    
+    
     private void infobtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_infobtnActionPerformed
         
     }//GEN-LAST:event_infobtnActionPerformed
@@ -3631,8 +3966,200 @@ private void displayResultMatrix2(Object[][] resultMatrix) {
         parent.revalidate();
     }//GEN-LAST:event_lgninfoActionPerformed
 
+    private void openMatrixInputPanel(int size, int power) {
+    JPanel matrixPanel = new JPanel(new GridBagLayout());
+    matrixPanel.setBackground(Color.BLACK);
+    GridBagConstraints gbc = new GridBagConstraints();
+    Font font = new Font("Arial", Font.PLAIN, 18);
+
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.insets = new Insets(5, 0, 5, 0); // مساحة بين العناصر
+
+    JLabel matrixLabel = new JLabel("أدخل عناصر المصفوفة " + size + "x" + size, SwingConstants.CENTER);
+    matrixLabel.setFont(font);
+    matrixLabel.setForeground(Color.YELLOW);
+    matrixLabel.setOpaque(true);
+    matrixLabel.setBackground(Color.BLACK);
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.gridwidth = 2;
+    matrixPanel.add(matrixLabel, gbc);
+
+    // مصفوفة من TextFields لإدخال العناصر
+    JTextField[][] matrixFields = new JTextField[size][size];
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            matrixFields[i][j] = new JTextField(5);
+            matrixFields[i][j].setFont(font);
+            matrixFields[i][j].setHorizontalAlignment(JTextField.CENTER);
+
+            gbc.gridx = j;
+            gbc.gridy = i + 1;
+            matrixPanel.add(matrixFields[i][j], gbc);
+        }
+    }
+
+    // زر لحساب ضرب المصفوفة في نفسها بعدد الأس
+    JButton calculateButton = new JButton("حساب ضرب المصفوفة");
+    calculateButton.setFont(font);
+    calculateButton.setBackground(Color.BLACK);
+    calculateButton.setForeground(Color.YELLOW);
+    gbc.gridy = size + 1;
+    gbc.gridwidth = 2;
+    matrixPanel.add(calculateButton, gbc);
+
+    JFrame matrixFrame = new JFrame("إدخال عناصر المصفوفة");
+    matrixFrame.setSize(500, 500);
+    matrixFrame.add(new JScrollPane(matrixPanel));
+    matrixFrame.setLocationRelativeTo(null);
+    matrixFrame.setVisible(true);
+
+    calculateButton.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                // إنشاء المصفوفة
+                int[][] matrix = new int[size][size];
+                for (int i = 0; i < size; i++) {
+                    for (int j = 0; j < size; j++) {
+                        matrix[i][j] = Integer.parseInt(matrixFields[i][j].getText());
+                    }
+                }
+
+                // ضرب المصفوفة في نفسها حسب الأس
+                int[][] resultMatrix = matrix;
+                for (int p = 1; p < power; p++) {
+                    resultMatrix = multiplyMatrices(resultMatrix, matrix);
+                }
+
+                // عرض النتيجة
+                displayResultMatrix(resultMatrix);
+            } catch (NumberFormatException ex) {
+                showErrorMessage("يرجى إدخال أرقام صحيحة في جميع الحقول.");
+            }
+        }
+    });
+}
+    
+    private int[][] multiplyMatrices(int[][] matrix1, int[][] matrix2) {
+    int size = matrix1.length;
+    int[][] result = new int[size][size];
+    for (int i = 0; i < size; i++) {
+        for (int j = 0; j < size; j++) {
+            result[i][j] = 0;
+            for (int k = 0; k < size; k++) {
+                result[i][j] += matrix1[i][k] * matrix2[k][j];
+            }
+        }
+    }
+    return result;
+}
+    
+    private void displayResultMatrix(int[][] matrix) {
+    JFrame resultFrame = new JFrame("نتيجة ضرب المصفوفة");
+    resultFrame.setSize(500, 500);
+    JPanel resultPanel = new JPanel(new GridLayout(matrix.length, matrix[0].length, 5, 5));
+
+    for (int i = 0; i < matrix.length; i++) {
+        for (int j = 0; j < matrix[i].length; j++) {
+            JTextField textField = new JTextField(String.valueOf(matrix[i][j]));
+            textField.setHorizontalAlignment(JTextField.CENTER);
+            textField.setEditable(false);
+            resultPanel.add(textField);
+        }
+    }
+
+    resultFrame.add(new JScrollPane(resultPanel));
+    resultFrame.setLocationRelativeTo(null);
+    resultFrame.setVisible(true);
+}
+    
+
+    
     private void jButton13ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton13ActionPerformed
-        // TODO add your handling code here:
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+    inputPanel.setBackground(Color.BLACK);
+    GridBagConstraints gbc = new GridBagConstraints();
+    Font font = new Font("Arial", Font.PLAIN, 18);
+
+    gbc.fill = GridBagConstraints.HORIZONTAL;
+    gbc.insets = new Insets(5, 0, 5, 0); // مساحة بين العناصر
+
+    // إعداد الـ JLabel لحجم المصفوفة
+    JLabel sizeLabel = new JLabel("أدخل حجم المصفوفة (عدد الصفوف والأعمدة):", SwingConstants.CENTER);
+    sizeLabel.setFont(font);
+    sizeLabel.setForeground(Color.YELLOW);
+    sizeLabel.setOpaque(true);
+    sizeLabel.setBackground(Color.BLACK);
+    gbc.gridx = 0;
+    gbc.gridy = 0;
+    gbc.gridwidth = 2;
+    inputPanel.add(sizeLabel, gbc);
+
+    // إعداد JTextField لحجم المصفوفة
+    gbc.gridwidth = 1;
+    gbc.gridx = 0;
+    gbc.gridy = 1;
+    JTextField sizeField = new JTextField(7); 
+    sizeField.setFont(font);
+    inputPanel.add(sizeField, gbc);
+
+    // إعداد JLabel لرقم الأس
+    JLabel powerLabel = new JLabel("أدخل رقم الأس:", SwingConstants.CENTER);
+    powerLabel.setFont(font);
+    powerLabel.setForeground(Color.YELLOW);
+    gbc.gridy = 2;
+    inputPanel.add(powerLabel, gbc);
+
+    // إعداد JTextField لرقم الأس
+    gbc.gridy = 3;
+    JTextField powerField = new JTextField(7);
+    powerField.setFont(font);
+    inputPanel.add(powerField, gbc);
+
+    // إعداد زر لإنشاء المصفوفة
+    JButton generateButton = new JButton("إنشاء المصفوفة");
+    generateButton.setFont(font);
+    generateButton.setBackground(Color.BLACK);
+    generateButton.setForeground(Color.YELLOW);
+    gbc.gridy = 4;
+    gbc.gridwidth = 2;
+    inputPanel.add(generateButton, gbc);
+
+    JFrame inputFrame = new JFrame("إدخال حجم المصفوفة ورقم الأس");
+    inputFrame.setSize(400, 300);
+    inputFrame.add(inputPanel);
+    inputFrame.setLocationRelativeTo(null);
+    inputFrame.setVisible(true);
+
+    generateButton.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            try {
+                // التحقق من حجم المصفوفة
+                int size = Integer.parseInt(sizeField.getText());
+                // التحقق من رقم الأس
+                int power = Integer.parseInt(powerField.getText());
+
+                if (size <= 0) {
+                    showErrorMessage("حجم المصفوفة يجب أن يكون أكبر من صفر.");
+                    return;
+                }
+                if (power <= -1) {
+                    showErrorMessage("رقم الأس يجب أن يكون أكبر من -1.");
+                    return;
+                }
+
+                // إغلاق نافذة الإدخال
+                inputFrame.dispose();
+
+                // فتح نافذة جديدة لإدخال عناصر المصفوفة
+                openMatrixInputPanel(size, power);
+            } catch (NumberFormatException ex) {
+                showErrorMessage("يرجى إدخال أرقام صحيحة.");
+            }
+        }
+    });
     }//GEN-LAST:event_jButton13ActionPerformed
 
     

@@ -1020,7 +1020,7 @@ private Double[] solveEquations(Object[][] coefficients, Object[] constants) {
     // إضافة المصفوفات المحفوظة مع أسماء العمليات
     for (int i = 0; i < resultCount; i++) {
         // إضافة اسم العملية كـ JLabel
-        JLabel resultNameLabel = new JLabel("العملية: " + operationNames[i]);  // استخدام operationNames
+        JLabel resultNameLabel = new JLabel("النتيجه " +(i + 1)+":  " + operationNames[i]);  // استخدام operationNames
         resultNameLabel.setFont(new Font("Arial", Font.BOLD, 14));  // لتحديد نوع الخط
         savedResultsPanel.add(resultNameLabel);  // إضافة اسم العملية
 
@@ -2021,24 +2021,22 @@ private Object[][] invertMatrix(Double[][] matrix) throws Exception {
                 }
             }
 
-            // تحقق من المتغيرات المتقابلة مثل (+x و -x) وضع صفر في هذه الحالة
-            for (Map.Entry<String, Double> entry : totalTerms.entrySet()) {
-                String variable = entry.getKey();
-                double coefficient = entry.getValue();
+            // إزالة المتغيرات التي تصبح قيمتها صفر بسبب الإشارات المتقابلة
+            totalTerms.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1e-10);
 
-                // إذا كانت قيمة المعامل قريبة من صفر (لتصفير القيم المتقابلة بعكس الإشارة)
-                if (Math.abs(coefficient) < 1e-10) {
-                    totalTerms.put(variable, 0.0); // اجعلها صفر
-                }
-            }
-
-            // تنسيق الناتج بحيث لا يظهر المتغيرات أو المعاملات التي قيمتها صفر
-            resultMatrix[j][k] = formatResult(totalTerms);
+            // إذا لم يبق أي متغير وكانت الخريطة فارغة، اعتبر الناتج صفرًا
+            resultMatrix[j][k] = totalTerms.isEmpty() ? "0" : formatResult(totalTerms);
         }
     }
 
+    // حفظ الناتج مباشرة بعد حسابه
+    saveResult(resultMatrix, "جمع المصفوفات");
+
+    // عرض المصفوفة المحسوبة مباشرة بعد الحفظ
     displaySumMatrixWithVariables(resultMatrix);
 }
+
+
 
 
 
@@ -2167,30 +2165,38 @@ private String formatResult(Map<String, Double> terms) {
     // إزالة المعاملات القريبة من الصفر
     terms.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1e-10);
 
+    // إذا لم يبق شيء في الخريطة، أعد "0"
+    if (terms.isEmpty()) {
+        return "0";
+    }
+
     // إذا كان هناك قيمة ثابتة (constant) أضفها أولاً
     if (terms.containsKey("constant")) {
-        result.append(terms.get("constant")).append(" ");
+        result.append(terms.get("constant"));
         terms.remove("constant");
     }
 
-    // أضف المتغيرات مع معاملة القيم السالبة بشكل صحيح
+    // أضف المتغيرات مع معالجة القيم السالبة بشكل صحيح
     for (Map.Entry<String, Double> entry : terms.entrySet()) {
         double coefficient = entry.getValue();
-        if (coefficient != 0) { // فقط أضف المتغيرات غير الصفرية
-            if (result.length() > 0 && coefficient > 0) {
-                result.append("+ ");
-            }
-            result.append(coefficient).append(entry.getKey()).append(" ");
+        if (coefficient > 0 && result.length() > 0) {
+            result.append(" + ");
+        } else if (coefficient < 0 && result.length() > 0) {
+            result.append(" ");
         }
-    }
-
-    // إذا كانت النتيجة فارغة (أي جميع المعاملات أصبحت صفرًا)، فإعرض صفر
-    if (result.length() == 0) {
-        return "0";
+        if (coefficient == 1.0) {
+            result.append(entry.getKey());
+        } else if (coefficient == -1.0) {
+            result.append("-").append(entry.getKey());
+        } else {
+            result.append(coefficient).append(entry.getKey());
+        }
     }
 
     return result.toString().trim();
 }
+
+
 
 
 
@@ -2619,6 +2625,10 @@ generateButton.addActionListener(new ActionListener() {
     for (String part : parts) {
         if (part.matches("-?\\d+(\\.\\d+)?")) { // رقم ثابت
             terms.put("constant", terms.getOrDefault("constant", 0.0) + Double.parseDouble(part));
+        } else if (part.matches("-?[a-zA-Z]")) { // متغير بدون معامل صريح
+            String variable = part.replaceAll("-", ""); // إزالة علامة السالب مؤقتًا
+            double coefficient = part.startsWith("-") ? -1.0 : 1.0; // إذا كان يبدأ بـ "-" فالمعامل -1
+            terms.put(variable, terms.getOrDefault(variable, 0.0) + coefficient);
         } else if (part.matches("-?\\d*(\\.\\d+)?[a-zA-Z]")) { // متغير بمعامل
             String variable = part.replaceAll("-?\\d*(\\.\\d+)?", "");
             double coefficient = Double.parseDouble(part.replace(variable, "").isEmpty() ? "1" : part.replace(variable, ""));
@@ -2627,8 +2637,14 @@ generateButton.addActionListener(new ActionListener() {
             throw new IllegalArgumentException("تعبير غير صالح: " + part);
         }
     }
+
+    // إزالة المتغيرات التي قيمتها صفر (مثل A + -A)
+    terms.entrySet().removeIf(entry -> entry.getValue() == 0.0);
+
     return terms;
 }
+
+
 
 
 private boolean isValidInput1(String text) {
@@ -2665,22 +2681,21 @@ private void subtractMatricesWithVariables1(JTextField[][][] matrixFields, int r
                 }
             }
 
-            // تحقق من المتغيرات المتقابلة مثل (+x و -x) وضع صفر في هذه الحالة
-            for (Map.Entry<String, Double> entry : totalTerms.entrySet()) {
-                String variable = entry.getKey();
-                double coefficient = entry.getValue();
-                
-                if (Math.abs(coefficient) < 1e-10) {  // إذا كانت القيمة قريبة من صفر
-                    totalTerms.put(variable, 0.0);  // اجعلها صفر
-                }
-            }
+            // إزالة المتغيرات ذات المعامل القريب من الصفر
+            totalTerms.entrySet().removeIf(entry -> Math.abs(entry.getValue()) < 1e-10);
 
-            resultMatrix[j][k] = formatResult1(totalTerms);
+            // تنسيق النتيجة
+            resultMatrix[j][k] = totalTerms.isEmpty() ? "0" : formatResult1(totalTerms);
         }
     }
 
+    // حفظ الناتج مباشرة بعد حسابه
+    saveResult(resultMatrix, "طرح المصفوفات مع المتغيرات");
+
+    // عرض الناتج بعد الحفظ
     displaySubtractMatrixWithVariables1(resultMatrix);
 }
+
 
 
 
@@ -2943,8 +2958,6 @@ generateButton.addActionListener(new ActionListener() {
         }
     }
 });
-
-
 
     }//GEN-LAST:event_jButton7ActionPerformed
 
@@ -3383,7 +3396,7 @@ private void openMatrixInputPanelsForMultiplication(int rowsA, int colsA, int ro
                 }
 
                 // استدعاء دالة عرض الناتج
-                displayResultMatrix(resultMatrix, rowsA, colsB);
+                saveAndDisplayResultMatrix("ضرب المصفوفتين", resultMatrix, rowsA, colsB);
 
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(null, "يرجى إدخال قيم صحيحة", "خطأ", JOptionPane.ERROR_MESSAGE);
@@ -3394,6 +3407,16 @@ private void openMatrixInputPanelsForMultiplication(int rowsA, int colsA, int ro
     matrixFrame.add(matrixPanel, BorderLayout.CENTER);
     matrixFrame.add(multiplyButton, BorderLayout.SOUTH);
     matrixFrame.setVisible(true);
+}
+
+private void saveAndDisplayResultMatrix(String operationName, String[][] resultMatrix, int rows, int cols) {
+    // حفظ العملية
+    operationNames[resultCount] = operationName;
+    results[resultCount] = resultMatrix;
+    resultCount++;
+
+    // عرض النتيجة
+    displayResultMatrix(resultMatrix, rows, cols);
 }
 
 private String multiplyTerms(String term1, String term2) {
